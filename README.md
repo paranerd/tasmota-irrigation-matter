@@ -98,28 +98,28 @@ Apply the rules via `Tools > Console`.
 
 **Rule 1:**
 
-- Store whether the schedule is enabled or disabled in `var1`
+- Store whether the schedule is enabled or disabled in `mem1` (to be correctly restored after restart)
 - Enable/disable the timer according to the state of `Schedule Active`
 - When the schedule gets disabled turn off everything else, too
 
 ```bash
 Rule1
-ON Power9#State DO Backlog Var1 %value%; Timer1 {"Enable":%value%} ENDON
+ON Power9#State DO Backlog Mem1 %value%; Timer1 {"Enable":%value%} ENDON
 ON Power9#State=0 DO Backlog Power1 0; Power2 0; Power3 0; Power4 0; Power5 0; Power6 0; Power7 0; Power8 0; Power10 0 ENDON
 Rule1 1
 ```
 
 **Rule 2:**
 
-- Store the state of `Manual Schedule Start` in `var2`
+- Store the state of `Manual Schedule Start` in `var1`
 - When the schedule is started manually turn on `Relay 1` if the schedule is enabled, otherwise turn `Manual Schedule Start` back off
 - When `Manual Schedule Start` is turned off also turn off all physical relays
 
 ```bash
 Rule2
-ON Power10#State DO Var2 %value% ENDON
-ON Power10#State=1 DO IF (var1 == 1) Power1 1 ELSE Power10 0 ENDIF ENDON
-ON Power10#State=0 DO Backlog Power1 0; Power2 0; Power3 0; Power4 0; Power5 0; Power6 0; Power7 0 ENDON
+ON Power10#State DO Var1 %value% ENDON
+ON Power10#State=1 DO IF (mem1 == 1) Power1 1 ELSE Power10 0 ENDIF ENDON
+ON Power10#State=0 DO Backlog Power1 0; Power2 0; Power3 0; Power4 0; Power5 0; Power6 0; Power7 0; Power8 0 ENDON
 Rule2 1
 ```
 
@@ -130,15 +130,59 @@ Rule2 1
 
 ```bash
 Rule3
-ON Power1#State=0 DO IF ((var1 == 1) AND (var2 == 1)) Power2 1 ENDIF ENDON
-ON Power2#State=0 DO IF ((var1 == 1) AND (var2 == 1)) Power3 1 ENDIF ENDON
-ON Power3#State=0 DO IF ((var1 == 1) AND (var2 == 1)) Power4 1 ENDIF ENDON
-ON Power4#State=0 DO IF ((var1 == 1) AND (var2 == 1)) Power5 1 ENDIF ENDON
-ON Power5#State=0 DO IF ((var1 == 1) AND (var2 == 1)) Power6 1 ENDIF ENDON
-ON Power6#State=0 DO IF ((var1 == 1) AND (var2 == 1)) Power7 1 ENDIF ENDON
-ON Power7#State=0 DO IF ((var1 == 1) AND (var2 == 1)) Power8 1 ENDIF ENDON
+ON Power1#State=0 DO IF ((mem1 == 1) AND (var1 == 1)) Power2 1 ENDIF ENDON
+ON Power2#State=0 DO IF ((mem1 == 1) AND (var1 == 1)) Power3 1 ENDIF ENDON
+ON Power3#State=0 DO IF ((mem1 == 1) AND (var1 == 1)) Power4 1 ENDIF ENDON
+ON Power4#State=0 DO IF ((mem1 == 1) AND (var1 == 1)) Power5 1 ENDIF ENDON
+ON Power5#State=0 DO IF ((mem1 == 1) AND (var1 == 1)) Power6 1 ENDIF ENDON
+ON Power6#State=0 DO IF ((mem1 == 1) AND (var1 == 1)) Power7 1 ENDIF ENDON
+ON Power7#State=0 DO IF ((mem1 == 1) AND (var1 == 1)) Power8 1 ENDIF ENDON
 ON Power8#State=0 DO Power10 0 ENDON
 Rule3 1
 ```
 
-Note: Not checking both `var1` and `var2` would lead to strange behavior when turning off `Schedule Active` mid-run: The current relay will turn off but then all following will turn on and off quickly sequentially.
+Note: Not checking both `mem1` and `var1` would lead to strange behavior when turning off `Schedule Active` mid-run: The current relay will turn off but then all following will turn on and off quickly sequentially.
+
+**Rule 3 - Alternative with pauses:**
+
+- Works just like above but pauses for 5 seconds after each relay has turned off
+
+```bash
+Rule3
+ON Power1#State=0 DO RuleTimer1 5 ENDON
+ON Rules#Timer=1 DO IF ((mem1 == 1) AND (var1 == 1)) Power2 1 ENDIF ENDON
+ON Power2#State=0 DO RuleTimer2 5 ENDON
+ON Rules#Timer=2 DO IF ((mem1 == 1) AND (var1 == 1)) Power3 1 ENDIF ENDON
+ON Power3#State=0 DO RuleTimer3 5 ENDON
+ON Rules#Timer=3 DO IF ((mem1 == 1) AND (var1 == 1)) Power4 1 ENDIF ENDON
+ON Power4#State=0 DO RuleTimer4 5 ENDON
+ON Rules#Timer=4 DO IF ((mem1 == 1) AND (var1 == 1)) Power5 1 ENDIF ENDON
+ON Power5#State=0 DO RuleTimer5 5 ENDON
+ON Rules#Timer=5 DO IF ((mem1 == 1) AND (var1 == 1)) Power6 1 ENDIF ENDON
+ON Power7#State=0 DO RuleTimer6 5 ENDON
+ON Rules#Timer=6 DO IF ((mem1 == 1) AND (var1 == 1)) Power7 1 ENDIF ENDON
+ON Power8#State=0 DO RuleTimer7 5 ENDON
+ON Rules#Timer=7 DO IF ((mem1 == 1) AND (var1 == 1)) Power8 1 ENDIF ENDON
+ON Power8#State=0 DO Power10 0 ENDON
+Rule3 1
+```
+
+**Rule 3 - Alternative with groups:**
+
+- When `Relay 1` turns on also turn on `Relay 2`
+- When `Relay 2` turns off turn on `Relay 3` and `Relay 4` and so on...
+- Adjust the grouping to your needs
+- The example below assumes that the `PulseTime` for each relay in one group is the same or at least that the relay checked in `PowerX#State=0` is the one with the longer runtime. Otherwise the next group starts before the former one completely finished
+
+```bash
+Rule3
+ON Power1#State=1 DO IF ((mem1 == 1) AND (var1 == 1)) Power2 1 ENDIF ENDON
+ON Power2#State=0 DO RuleTimer1 5 ENDON
+ON Rules#Timer=1 DO IF ((mem1 == 1) AND (var1 == 1)) Power3 1; Power4 1 ENDIF ENDON
+ON Power4#State=0 DO RuleTimer2 5 ENDON
+ON Rules#Timer=2 DO IF ((mem1 == 1) AND (var1 == 1)) Power5 1; Power6 1 ENDIF ENDON
+ON Power6#State=0 DO RuleTimer3 5 ENDON
+ON Rules#Timer=3 DO IF ((mem1 == 1) AND (var1 == 1)) Power7 1; Power8 1 ENDIF ENDON
+ON Power8#State=0 DO Power10 0 ENDON
+Rule3 1
+```
