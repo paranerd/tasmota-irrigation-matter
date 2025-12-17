@@ -31,16 +31,16 @@ I used the [Tasmota Web Installer](https://tasmota.github.io/install/) for flash
 
 Go to `Configuration > Module` and set:
 
-- `GPIO16` -> `1`
-- `GPIO17` -> `2`
-- `GPIO18` -> `3`
-- `GPIO19` -> `4`
-- `GPIO21` -> `5`
-- `GPIO22` -> `6`
-- `GPIO23` -> `7`
-- `GPIO25` -> `8`
-- `GPIO26` -> `9`
-- `GPIO27` -> `10`
+- `GPIO32` -> `1`
+- `GPIO33` -> `2`
+- `GPIO25` -> `3`
+- `GPIO26` -> `4`
+- `GPIO27` -> `5`
+- `GPIO14` -> `6`
+- `GPIO12` -> `7`
+- `GPIO13` -> `8`
+- `GPIO15` -> `9`
+- `GPIO16` -> `10`
 
 The first 8 GPIOs are the actual physical relays. The last 2 are virtual relays: one to enable/disable the schedule (`Schedule Active`) and another to manually start the schedule (`Manual Schedule Start`).
 
