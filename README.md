@@ -186,3 +186,21 @@ ON Rules#Timer=3 DO IF ((mem1 == 1) AND (var1 == 1)) Power7 1; Power8 1 ENDIF EN
 ON Power8#State=0 DO Power10 0 ENDON
 Rule3 1
 ```
+
+## Troubleshooting
+
+### Connection issues
+
+Using the default settings and despite having 100% signal strength, the ESP would disappear from my network only minutes after being powered up - after being reachable initially just fine.
+
+The solution for me was to switch from [Dynamic Sleep to Normal Sleep](https://tasmota.github.io/docs/Dynamic-Sleep/):
+
+```bash
+SetOption60 1
+```
+
+Also I set the [Sleep](https://tasmota.github.io/docs/Energy-Saving/#device-power-consumption-and-measurement) value to 50, however this should be the default anyway:
+
+```bash
+Sleep 50
+```
