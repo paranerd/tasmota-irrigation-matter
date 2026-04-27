@@ -90,6 +90,8 @@ Adjust the `Time` to your needs.
 
 If you add more than one `Timer`, make sure to add them in `Rule1` accordingly
 
+**Important:** Make sure to set your [timezone](https://tasmota.github.io/docs/Timezone-Table/) correctly!
+
 ### Rules
 
 This is where the magic happens.
